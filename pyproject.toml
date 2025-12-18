@@ -1,0 +1,17 @@
+[project]
+name = "django-hrms"
+version = "0.1.0"
+description = "Open-source HRMS"
+requires-python = ">=3.11,<3.13"
+
+dependencies = [
+    "Django>=5.2,<5.3",
+    "djangorestframework>=3.15"
+]
+
+[build-system]
+requires = ["setuptools>=65", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.poetry]
+package-mode = false
