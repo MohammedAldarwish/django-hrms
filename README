@@ -1,0 +1,114 @@
+(The file `/Users/mohammadaldarwish/Development/django-hrms/README` exists, but is empty)
+**Django HRMS**
+
+- **Purpose**:HR management backend built with Django and Django REST Framework. It provides user authentication (JWT) and basic employee profile management.
+
+**Quick Setup**
+- **Python**: Tested with Python 3.11.9. Create and activate a virtualenv, then install dependencies:
+
+```
+python3.11 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+- **Database & migrations**: run migrations and create a superuser:
+
+```
+python backend/manage.py migrate
+python backend/manage.py createsuperuser
+```
+
+- **Run (development)**:
+
+```
+python backend/manage.py runserver
+```
+
+**Docker**
+- This repository includes a `Dockerfile` which uses `python:3.11.9-slim` and runs the app with `gunicorn` from the `backend/` folder.
+- Build image:
+
+```
+docker build -t django-hrms:latest .
+```
+
+- Run container (maps port 8000):
+
+```
+docker run --rm -p 8000:8000 django-hrms:latest
+```
+
+- Notes: `gunicorn` is installed in the Dockerfile. If you prefer to add it to `requirements.txt` remove the explicit `gunicorn` install in the Dockerfile.
+
+**Apps Overview**
+- `backend/apps/accounts`: custom user model + authentication routes.
+- `backend/apps/employees`: employee model, serializer, and API endpoints.
+
+**`accounts` App**
+- **Model**: `User` — custom user model (`backend/apps/accounts/models.py`) using `email` as `USERNAME_FIELD` and `UserManager` in `managers.py`.
+- **Auth endpoints** (registered in `backend/apps/accounts/urls.py`):
+	- `POST /auth/login/` — obtain JWT access/refresh tokens (uses `TokenObtainPairView`).
+	- `POST /auth/refresh/` — refresh access token (uses `TokenRefreshView`).
+
+Example: obtain token
+
+```
+curl -X POST http://127.0.0.1:8000/auth/login/ -H "Content-Type: application/json" -d '{"email":"admin@example.com","password":"password"}'
+```
+
+**`employees` App**
+- **Model**: `Employee` (`backend/apps/employees/models.py`)
+	- Fields: `user` (OneToOne to `User`), `position`, `salary`, `first_name`, `last_name`, `phone`, `address`, `date_of_birth`, `date_hired`, `emergency_contact`.
+- **Serializer**: `EmployeeSerializer` (`backend/apps/employees/serializers.py`) — `ModelSerializer` with `user_info` read-only field that returns the linked user's `id` and `email`.
+- **API view & endpoint** (`backend/apps/employees/views.py` and `backend/apps/employees/urls.py`):
+	- `GET /emp` — list all employees (admin only).
+	- `POST /emp` — create an employee (admin only). Accepts JSON with employee fields.
+	- `DELETE /emp` — delete an employee by `id`. Supports `id` as query param (`/emp?id=1`) or body JSON `{"id":1}` (admin only).
+
+Create employee example (admin credentials required):
+
+```
+curl -X POST "http://127.0.0.1:8000/emp" \
+	-H "Content-Type: application/json" \
+	-d '{"user":1,"position":"Developer","salary":"5000.00","first_name":"John","last_name":"Doe","phone":"123","address":"123 Main St","date_of_birth":"1990-01-01"}' \
+	-u admin_email:admin_password
+```
+
+Delete employee examples:
+
+```
+curl -X DELETE "http://127.0.0.1:8000/emp?id=1" -u admin_email:admin_password
+
+curl -X DELETE "http://127.0.0.1:8000/emp" -H "Content-Type: application/json" -d '{"id":1}' -u admin_email:admin_password
+```
+
+**Permissions**
+- `EmployeeView` uses `IsAdminUser` so only admin users (superusers or staff) may access the endpoints. Authenticate with session or JWT depending on your setup.
+
+**Testing**
+- Run test suite (from project root):
+
+```
+python backend/manage.py test
+```
+
+**Common tasks & tips**
+- Add `ALLOWED_HOSTS` and `SECRET_KEY` in `backend/core/settings.py` or via environment variables when deploying.
+- For development with Docker and live code reload consider a `docker-compose.yml` mounting the source and running `manage.py runserver`.
+- If you want standard RESTful endpoints (detail routes like `/emp/<id>/`) convert `EmployeeView` to a `ModelViewSet` and register with a DRF `DefaultRouter`.
+
+**Files of interest**
+- `backend/core/settings.py` — Django settings.
+- `backend/manage.py` — Django management script.
+- `backend/apps/accounts/` — custom user model and auth URLs.
+- `backend/apps/employees/` — employee model, serializer, views, and urls.
+- `requirements.txt` — Python dependencies used by the Docker image.
+- `Dockerfile` and `.dockerignore` — containerization files.
+
+**Next steps I can help with**
+- Add a `docker-compose.yml` for local development.
+- Convert `employees` API to a `ViewSet` and add routed detail endpoints.
+- Add endpoint tests and run them.
+
+If you'd like any of these next steps, tell me which one and I'll implement it.

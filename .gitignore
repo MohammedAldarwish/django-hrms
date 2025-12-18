@@ -1,7 +1,7 @@
 venv
 .env
-vscode
-*/__pycache__
-*/migrations
+.vscode
+__pycache__
+migrations
 
 backend/db.sqlite3
